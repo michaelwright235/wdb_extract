@@ -4,6 +4,17 @@ import zlib
 from Crypto.Cipher import ARC4
 from Crypto.Hash import MD5
 
+DLL_FILE_SIZE = "163840"
+SECRET = "113841"
+PASSWORD = ""
+
+# The password is based on a size of Inf_WebDnld.dll file and
+# a secret string. As far as I can tell, it doesn't change from phone to phone.
+for i in range(0, len(DLL_FILE_SIZE)):
+    PASSWORD += chr (ord(SECRET[i % 6]) + ord(DLL_FILE_SIZE[i]))
+
+KEY = MD5.new(bytes(PASSWORD, 'ascii')).digest()
+
 def print_bytes(by):
     for byte in by:
         print(hex(byte), end=",")
@@ -17,9 +28,7 @@ def bytes_to_int(by: bytes) -> int:
     int.from_bytes(result, 'little')
 
 def get_cipher():
-    pswd = "bgfpha"
-    key = MD5.new(bytes(pswd, 'ascii')).digest()
-    RC4_Cipher = ARC4.new(key)
+    RC4_Cipher = ARC4.new(KEY)
     return RC4_Cipher
 
 class WdbFile:
