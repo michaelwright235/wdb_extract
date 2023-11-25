@@ -4,8 +4,8 @@ import zlib
 from Crypto.Cipher import ARC4
 from Crypto.Hash import MD5
 
-DLL_FILE_SIZE = "163840"
-SECRET = "113841"
+DLL_FILE_SIZE = "163840" # size of Inf_WebDnld.dll file
+SECRET = "113841" # found in dll
 PASSWORD = ""
 
 # The password is based on a size of Inf_WebDnld.dll file and
@@ -20,13 +20,6 @@ def print_bytes(by):
         print(hex(byte), end=",")
     print()
 
-def bytes_to_int(by: bytes) -> int:
-    result = bytearray()
-    for byte in by:
-        if byte != r'\x00' and byte != None:
-            result.append(byte)    
-    int.from_bytes(result, 'little')
-
 def get_cipher():
     RC4_Cipher = ARC4.new(KEY)
     return RC4_Cipher
@@ -37,7 +30,8 @@ class WdbFile:
         self.out_dir = out_dir
         if self.out_dir == None:
             self.out_dir = os.path.dirname(filename_in)
-
+        if os.path.isdir(self.out_dir) == False:
+            raise Exception("'%s' is not a directory. Check if it exists." % self.out_dir)
         self.__decrypt_header()
         self.__decrypt_footer()
         self.__find_files()
@@ -47,7 +41,7 @@ class WdbFile:
         self.file_in.close()
         
     def __decrypt_header(self):
-        header_length = bytes_to_int(self.file_in.read(4))
+        header_length = int.from_bytes(self.file_in.read(4), 'little')
         #print("Header length = " + hex(header_length) + "\n")
         header: bytes = self.file_in.read(header_length)
         #print("Original:")
@@ -58,7 +52,7 @@ class WdbFile:
 
         # Checks if file is correct
         if(int(header_decrypted[2*4])+int(header_decrypted[3*4])+0x10 != int(header_decrypted[0])):
-            raise Exception("Invalid file header") 
+            raise Exception("Invalid WDB file header") 
 
         header_filename_len = int(header_decrypted[2*4])
         header_sw_len = header_decrypted[3*4]
@@ -136,12 +130,13 @@ class WdbFile:
             f_out = open(file_out_name, "wb")
             decompressed = zlib.decompress(decrypted)
             f_out.write(decompressed)
+            f_out.close()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
                         prog = 'wdb.py',
-                        description = 'Extract WDB file for old LG phones')
+                        description = 'Extract WDB files for old LG phones')
     parser.add_argument('-o', help='Output directory. By default files are extracted in the same folder', type=str)
     parser.add_argument('filename', help='Path to the file', type=str)
     args = parser.parse_args()
