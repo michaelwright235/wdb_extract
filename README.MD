@@ -31,4 +31,5 @@ algorithm. The key is based on the size of `Inf_WebDnld.dll` (this dll is
 responsible of extracting WDBs) and a secret string found in it, then it's
 hashed with MD5 algorithm. As far as I can tell, these parameters (size and
 key) are the same for most firmwares. Every file is compressed with `zlib` and
-automatically gets decompressed (this is true for native library behaviour too).
+automatically gets decompressed (this is true for the original library
+behaviour too).
