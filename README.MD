@@ -7,6 +7,12 @@ you'll find a WDB file – a cointainer of necessary files for flashing an old
 LG phone. This python script extracts those **old** WDB files. By old LG phones
 I mean models, such as KP500, GS290, KS360, etc (models from around 2008-2010).
 
+Since a decryption key is based on the size of `Inf_WebDnld.dll` file that
+may vary from model to model, some of them may be yet unsupported. If you
+found one, please file an issue on GitHub.
+
+Known supported models: KP500, GS290, KS360, GT350, KP275.
+
 ```text
 usage: wdb.py [-h] [-o O] filename
 
@@ -26,10 +32,10 @@ Before running the script install dependencies via
 ## What is a WDB file?
 
 A WDB file is a proprietary encrypted acrhive of files. The header, footer and
-inner files are encrypted with [RC4](https://en.wikipedia.org/wiki/RC4) 
+inner files are encrypted with [RC4](https://en.wikipedia.org/wiki/RC4)
 algorithm. The key is based on the size of `Inf_WebDnld.dll` (this dll is
 responsible of extracting WDBs) and a secret string found in it, then it's
-hashed with MD5 algorithm. As far as I can tell, these parameters (size and
-key) are the same for most firmwares. Every file is compressed with `zlib` and
-automatically gets decompressed (this is true for the original library
-behaviour too).
+hashed with MD5 algorithm. The size parameter may vary, however the secret
+key remains the same (as far as I can tell). Every file is compressed with
+`zlib` and automatically gets decompressed (this is true for the original
+library behaviour too).
