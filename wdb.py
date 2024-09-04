@@ -34,7 +34,7 @@ class WdbFile:
         self.file_in = open(filename_in, 'rb')
         self.out_dir = out_dir
         if self.out_dir == None:
-            self.out_dir = os.path.dirname(filename_in)
+            self.out_dir = os.path.dirname(os.path.realpath(__file__))
         if os.path.isdir(self.out_dir) == False:
             raise Exception("'%s' is not a directory. Check if it exists." % self.out_dir)
         self.__find_key()
