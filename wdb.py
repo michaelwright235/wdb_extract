@@ -4,25 +4,30 @@ import zlib
 from Crypto.Cipher import ARC4
 from Crypto.Hash import MD5
 
-DLL_FILE_SIZE = "163840" # size of Inf_WebDnld.dll file
+# Size of Inf_WebDnld.dll file. May vary from model to model
+DLL_FILE_SIZES = [
+    "163840", # KP500, GS290, KS360
+    "176128", # GT350
+    "155648", # KP275
+]
 SECRET = "113841" # found in dll
-PASSWORD = ""
-
-# The password is based on a size of Inf_WebDnld.dll file and
-# a secret string. As far as I can tell, it doesn't change from phone to phone.
-for i in range(0, len(DLL_FILE_SIZE)):
-    PASSWORD += chr (ord(SECRET[i % 6]) + ord(DLL_FILE_SIZE[i]))
-
-KEY = MD5.new(bytes(PASSWORD, 'ascii')).digest()
 
 def print_bytes(by):
     for byte in by:
         print(hex(byte), end=",")
     print()
 
-def get_cipher():
-    RC4_Cipher = ARC4.new(KEY)
-    return RC4_Cipher
+def get_keys():
+    keys = []
+    for size in DLL_FILE_SIZES:
+        # The password is based on a size of Inf_WebDnld.dll file and
+        # a secret string. As far as I can tell, it doesn't change from phone to phone.
+        password = ""
+        for i in range(0, len(size)):
+            password += chr (ord(SECRET[i % 6]) + ord(size[i]))
+        key = MD5.new(bytes(password, 'ascii')).digest()
+        keys.append(key)
+    return keys
 
 class WdbFile:
     def __init__(self, filename_in, out_dir) -> None:
@@ -32,6 +37,7 @@ class WdbFile:
             self.out_dir = os.path.dirname(filename_in)
         if os.path.isdir(self.out_dir) == False:
             raise Exception("'%s' is not a directory. Check if it exists." % self.out_dir)
+        self.__find_key()
         self.__decrypt_header()
         self.__decrypt_footer()
         self.__find_files()
@@ -39,7 +45,24 @@ class WdbFile:
 
     def __del__(self):
         self.file_in.close()
-        
+
+    def __find_key(self):
+        header_length = int.from_bytes(self.file_in.read(4), 'little')
+        header: bytes = self.file_in.read(header_length)
+        keys = get_keys()
+        for key in keys:
+            cipher = ARC4.new(key)
+            header_decrypted = cipher.decrypt(header)
+            if(int(header_decrypted[2*4])+int(header_decrypted[3*4])+0x10 == int(header_decrypted[0])):
+                print("Found a suitable decryption key")
+                self.key = key
+        self.file_in.seek(0)
+        if hasattr(self, "key") == False:
+            raise Exception("Cannot find a suitable decryption key. Please, report an issue on GitHub.")
+
+    def __get_cipher(self):
+        return ARC4.new(self.key)
+
     def __decrypt_header(self):
         header_length = int.from_bytes(self.file_in.read(4), 'little')
         #print("Header length = " + hex(header_length) + "\n")
@@ -47,12 +70,12 @@ class WdbFile:
         #print("Original:")
         #print_bytes(header)
         #print("Decrypted:")
-        header_decrypted = get_cipher().decrypt(header)
+        header_decrypted = self.__get_cipher().decrypt(header)
         #print_bytes(header_decrypted)
 
         # Checks if file is correct
         if(int(header_decrypted[2*4])+int(header_decrypted[3*4])+0x10 != int(header_decrypted[0])):
-            raise Exception("Invalid WDB file header") 
+            raise Exception("Invalid WDB file header")
 
         header_filename_len = int(header_decrypted[2*4])
         header_sw_len = header_decrypted[3*4]
@@ -62,7 +85,7 @@ class WdbFile:
 
         print("File name: %s" % self.wdb_file_name)
         print("SW: %s" % self.wdb_sw)
-    
+
     def __decrypt_footer(self):
         self.file_in.seek(-4, 2) # the 4th byte from the end
         ending_byte = int.from_bytes(self.file_in.read(1), 'little')
@@ -72,7 +95,7 @@ class WdbFile:
         footer = self.file_in.read(ending_byte)
         #print_bytes(footer)
 
-        footer_decrypted = get_cipher().decrypt(footer)
+        footer_decrypted = self.__get_cipher().decrypt(footer)
         #print("Footer ecrypted:")
         #print_bytes(footer_decrypted)
 
@@ -96,7 +119,7 @@ class WdbFile:
             some = self.file_in.read(4)
             #print_bytes(some)
             file_header = self.file_in.read(file_header_len)
-            file_header_decrypted = get_cipher().decrypt(file_header)
+            file_header_decrypted = self.__get_cipher().decrypt(file_header)
             #print_bytes(file_header_decrypted)
 
             header1byte = file_header_decrypted[0:4]
@@ -108,7 +131,7 @@ class WdbFile:
             #print_bytes(header1byte)
 
             filename = file_header_decrypted[16:16+len_of_filename].decode('ascii')
-            print("File #%d: '%s', size = %d (zlib compressed)" % (i, filename, filesize))      
+            print("File #%d: '%s', size = %d (zlib compressed)" % (i, filename, filesize))
             #print("header4byte: ", end="")
             #print_bytes(header4byte)
             self.files.append({
@@ -125,7 +148,7 @@ class WdbFile:
             print("Extracting '%s'..." % file['name'].split('\\')[1])
 
             raw = self.file_in.read(file['size'])
-            decrypted = get_cipher().decrypt(raw)
+            decrypted = self.__get_cipher().decrypt(raw)
 
             f_out = open(file_out_name, "wb")
             decompressed = zlib.decompress(decrypted)
