@@ -6,9 +6,10 @@ from Crypto.Hash import MD5
 
 # Size of Inf_WebDnld.dll file. May vary from model to model
 DLL_FILE_SIZES = [
-    "163840", # KP500, GS290, KS360
+    "163840", # KP500, GS290, KS360, GC900, GD350, GD510, KM570, KM900, KS365
     "176128", # GT350
     "155648", # KP275
+    "278528", # P970
 ]
 SECRET = "113841" # found in dll
 

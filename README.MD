@@ -11,7 +11,8 @@ Since a decryption key is based on the size of `Inf_WebDnld.dll` file that
 may vary from model to model, some of them may be yet unsupported. If you
 found one, please file an issue on GitHub.
 
-Known supported models: KP500, GS290, KS360, GT350, KP275.
+Known supported models: KP500, GS290, KS360, GT350, KP275, GC900, P970, GD350,
+GD510, KM570, KM900, KS365.
 
 ```text
 usage: wdb.py [-h] [-o O] filename
