@@ -22,7 +22,7 @@ def get_keys():
     keys = []
     for size in DLL_FILE_SIZES:
         # The password is based on a size of Inf_WebDnld.dll file and
-        # a secret string. As far as I can tell, it doesn't change from phone to phone.
+        # a secret string. As far as I can tell, the secret doesn't change from phone to phone.
         password = ""
         for i in range(0, len(size)):
             password += chr (ord(SECRET[i % 6]) + ord(size[i]))
@@ -125,7 +125,7 @@ class WdbFile:
         #print_bytes(footer)
 
         footer_decrypted = self.__get_cipher().decrypt(footer)
-        #print("Footer ecrypted:")
+        #print("Footer encrypted:")
         #print_bytes(footer_decrypted)
 
         self.num_of_files = int(footer_decrypted[0])
