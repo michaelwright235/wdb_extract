@@ -27,19 +27,47 @@ def get_keys():
         for i in range(0, len(size)):
             password += chr (ord(SECRET[i % 6]) + ord(size[i]))
         key = MD5.new(bytes(password, 'ascii')).digest()
-        keys.append(key)
+        keys.append((key, size))
+    return keys
+
+def bruteforce_keys():
+    keys = []
+    for size1 in range(0, 900000):
+        size = "%06d" % (size1)
+        password = ""
+        for i in range(0, len(size)):
+            password += chr (ord(SECRET[i % 6]) + ord(size[i]))
+        key = MD5.new(bytes(password, 'ascii')).digest()
+        keys.append((key, size))
     return keys
 
 class WdbFile:
-    def __init__(self, filename_in, out_dir) -> None:
+    def __init__(self, filename_in, out_dir, bruteforce) -> None:
         self.file_in = open(filename_in, 'rb')
         self.out_dir = out_dir
         if self.out_dir == None:
             self.out_dir = os.path.dirname(os.path.realpath(__file__))
         if os.path.isdir(self.out_dir) == False:
             raise Exception("'%s' is not a directory. Check if it exists." % self.out_dir)
-        self.__find_key()
-        self.__decrypt_header()
+
+        if bruteforce == False:
+            self.__find_key()
+            self.__decrypt_header()
+        else:
+            keys = bruteforce_keys()
+            for (key, dll_size) in keys:
+                self.key = key
+                try:
+                    self.file_in.seek(0)
+                    self.__decrypt_header()
+                except (Exception, IndexError):
+                    self.key = ""
+                else:
+                    print("Found a suitable key (dll size = %s)" % (dll_size))
+            if self.key == "":
+                print("Bruteforcing failed, couldn't find a suitable key. Please, report an issue on GitHub.")
+                return
+
         self.__decrypt_footer()
         self.__find_files()
         self.__extract()
@@ -51,15 +79,15 @@ class WdbFile:
         header_length = int.from_bytes(self.file_in.read(4), 'little')
         header: bytes = self.file_in.read(header_length)
         keys = get_keys()
-        for key in keys:
+        for (key, dll_size) in keys:
             cipher = ARC4.new(key)
             header_decrypted = cipher.decrypt(header)
             if(int(header_decrypted[2*4])+int(header_decrypted[3*4])+0x10 == int(header_decrypted[0])):
-                print("Found a suitable decryption key")
+                print("Found a suitable decryption key (dll size = %s)" % (dll_size))
                 self.key = key
         self.file_in.seek(0)
         if hasattr(self, "key") == False:
-            raise Exception("Cannot find a suitable decryption key. Please, report an issue on GitHub.")
+            raise Exception("Cannot find a suitable decryption key. You may try bruteforcing (-b flag).")
 
     def __get_cipher(self):
         return ARC4.new(self.key)
@@ -162,6 +190,7 @@ if __name__ == '__main__':
                         prog = 'wdb.py',
                         description = 'Extract WDB files for old LG phones')
     parser.add_argument('-o', help='Output directory. By default files are extracted in the same folder', type=str)
+    parser.add_argument('-b', help='Try bruteforcing dll size to find a suitable key', action='store_true')
     parser.add_argument('filename', help='Path to the file', type=str)
     args = parser.parse_args()
 
@@ -169,4 +198,4 @@ if __name__ == '__main__':
         print("File doesn't exist")
         exit()
 
-    WdbFile(args.filename, args.o)
+    WdbFile(args.filename, args.o, args.b)
