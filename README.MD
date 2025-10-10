@@ -8,9 +8,9 @@ LG phone. This python script extracts those **old** WDB files. By old LG phones
 I mean models, such as KP500, GS290, KS360, etc (models from around 2008-2010).
 
 Since the decryption key is based on the size of `Inf_WebDnld.dll` file that
-may vary from model to model, some of them may be yet unsupported. If you
-found one, you may try the `-b` flag to bruteforce it. If it fails, please
-file an issue on GitHub.
+may vary from model to model, some of them may be yet unsupported. If there's
+no matching dll size, you may try the `-b` flag to bruteforce it. If it fails,
+please file an issue on GitHub.
 
 Known supported models: KP500, GS290, KS360, GT350, KP275, GC900, P970, GD350,
 GD510, KM570, KM900, KS365.
