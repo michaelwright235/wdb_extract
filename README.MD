@@ -13,7 +13,7 @@ no matching dll size, you may try the `-b` flag to bruteforce it. If it fails,
 please file an issue on GitHub.
 
 Known supported models: KP500, GS290, KS360, GT350, KP275, GC900, P970, GD350,
-GD510, KM570, KM900, KS365.
+GD510, KM570, KM900, KS365, KH1000.
 
 ```text
 usage: wdb.py [-h] [-o O] [-b] filename
