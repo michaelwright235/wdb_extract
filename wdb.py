@@ -10,12 +10,13 @@ DLL_FILE_SIZES = [
     "176128", # GT350
     "155648", # KP275
     "278528", # P970
+    "425984", # KH1000
 ]
 SECRET = "113841" # found in dll
 
 def print_bytes(by):
     for byte in by:
-        print(hex(byte), end=",")
+        print('{:02x}'.format(byte), end=" ")
     print()
 
 def get_keys():
@@ -117,7 +118,7 @@ class WdbFile:
 
     def __decrypt_footer(self):
         self.file_in.seek(-4, 2) # the 4th byte from the end
-        ending_byte = int.from_bytes(self.file_in.read(1), 'little')
+        ending_byte = int.from_bytes(self.file_in.read(4), 'little')
         #print(hex(ending_byte))
 
         self.file_in.seek(-ending_byte-4, 2)
@@ -156,11 +157,9 @@ class WdbFile:
             filesize = int.from_bytes(file_header_decrypted[8:12], 'little')
             header4byte = file_header_decrypted[12:16]
 
-            #print("header1byte: ", end="")
-            #print_bytes(header1byte)
+            filename = file_header_decrypted[16:16+len_of_filename].decode('cp949')
 
-            filename = file_header_decrypted[16:16+len_of_filename].decode('ascii')
-            print("File #%d: '%s', size = %d (zlib compressed)" % (i, filename, filesize))
+            #print("File %s: '%s', size = %s (zlib compressed)" % (hex(self.files_offset[i]), filename, hex(filesize)))
             #print("header4byte: ", end="")
             #print_bytes(header4byte)
             self.files.append({
@@ -173,8 +172,10 @@ class WdbFile:
     def __extract(self):
         for file in self.files:
             self.file_in.seek(file['offset']+file['header_length']+4+4, 0)
-            file_out_name = self.out_dir + os.sep + file['name'].split('\\')[1]
-            print("Extracting '%s'..." % file['name'].split('\\')[1])
+            file_out_name = self.out_dir + os.sep + file['name'].replace('\\', os.sep)
+            os.makedirs(file_out_name, exist_ok=True)
+            os.rmdir(file_out_name)
+            print("Extracting '%s'..." % file['name'])
 
             raw = self.file_in.read(file['size'])
             decrypted = self.__get_cipher().decrypt(raw)
