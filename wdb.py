@@ -192,8 +192,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
                         prog = 'wdb.py',
                         description = 'Extract WDB files for old LG phones')
-    parser.add_argument('-o', help='Output directory. By default files are extracted in the same folder', type=str)
-    parser.add_argument('-b', help='Try bruteforcing dll size to find a suitable key', action='store_true')
+    parser.add_argument('-o', help='Output directory. By default, files are extracted into the same folder as the source file', type=str)
+    parser.add_argument('-b', help='Try bruteforcing the `Inf_WebDnld.dll` size to find a suitable decryption key', action='store_true')
     parser.add_argument('filename', help='Path to the file', type=str)
     args = parser.parse_args()
 
