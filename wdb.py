@@ -55,6 +55,7 @@ class WdbFile:
             self.__find_key()
             self.__decrypt_header()
         else:
+            print("Bruteforcing a dll size...")
             keys = bruteforce_keys()
             for (key, dll_size) in keys:
                 self.key = key
@@ -65,6 +66,7 @@ class WdbFile:
                     self.key = ""
                 else:
                     print("Found a suitable key (dll size = %s)" % (dll_size))
+                    break
             if self.key == "":
                 print("Bruteforcing failed, couldn't find a suitable key. Please, report an issue on GitHub.")
                 return
